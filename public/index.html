@@ -11,7 +11,10 @@
         <h1>Edit Your Apartment Image</h1>
         <input type="file" id="imageInput" accept="image/*">
         <textarea id="aiPrompt" placeholder="Describe your edit request..."></textarea>
-        <button onclick="submitImage()">Submit</button>
+        <button id="submit">Submit</button>
+        <div id="progressBarContainer">
+            <div id="progressBar"></div>
+        </div>
         <div id="resultImage"></div>
     </div>
     <script src="script.js"></script>
