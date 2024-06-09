@@ -6,7 +6,8 @@ document.addEventListener('DOMContentLoaded', function() {
     const progressBar = document.getElementById('progressBar');
     const errorDisplay = document.getElementById('errorDisplay');
 
-    submitButton.addEventListener('click', function() {
+    submitButton.addEventListener('click', function(event) {
+        event.preventDefault(); // Previene il comportamento di invio normale del form
         if (!imageInput.files.length) {
             displayError('Please select an image to upload.');
             return;
@@ -16,9 +17,9 @@ document.addEventListener('DOMContentLoaded', function() {
         formData.append('image', imageInput.files[0]);
         formData.append('prompt', promptInput.value);
 
-        progressBar.style.width = '0%';
-        errorDisplay.textContent = '';
-        resultImage.innerHTML = '';
+        progressBar.style.width = '0%'; // Resetta la barra di progresso
+        errorDisplay.textContent = ''; // Pulisce eventuali messaggi di errore precedenti
+        resultImage.innerHTML = ''; // Pulisce l'immagine precedente
 
         fetch('/edit-image', {
             method: 'POST',
@@ -29,7 +30,7 @@ document.addEventListener('DOMContentLoaded', function() {
             if (obj.status === 200) {
                 updateImage(obj.body);
             } else {
-                throw new Error(obj.body);
+                throw new Error(obj.body.message || 'Failed to edit the image.');
             }
         })
         .catch(error => {
@@ -42,14 +43,14 @@ document.addEventListener('DOMContentLoaded', function() {
     function updateImage(data) {
         if (data.imageUrl) {
             resultImage.innerHTML = `<img src="${data.imageUrl}" alt="Edited Image"/>`;
-            progressBar.style.width = '100%';
+            progressBar.style.width = '100%'; // Completa la barra di progresso
         } else {
             throw new Error('No image URL returned from the server.');
         }
     }
 
     function displayError(message) {
-        errorDisplay.textContent = message;
+        errorDisplay.textContent = message; // Mostra il messaggio di errore all'utente
     }
 
     function simulateProgress() {
