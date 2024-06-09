@@ -1,15 +1,17 @@
 {
-  "name": "apartment-image-editor",
+  "name": "ai-image-editor",
   "version": "1.0.0",
-  "description": "A web app to edit apartment images using AI",
+  "description": "An AI-powered image editing service.",
   "main": "server.js",
   "scripts": {
     "start": "node server.js"
   },
   "dependencies": {
-    "express": "^4.17.1",
-    "multer": "^1.4.3",
     "axios": "^0.21.1",
-    "dotenv": "^8.2.0"
-  }
+    "dotenv": "^8.2.0",
+    "express": "^4.17.1",
+    "multer": "^1.4.2"
+  },
+  "author": "",
+  "license": "ISC"
 }
