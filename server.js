@@ -3,26 +3,28 @@ const multer = require('multer');
 const axios = require('axios');
 const dotenv = require('dotenv');
 const Queue = require('bull');
+const Redis = require('ioredis');
 const cors = require('cors');
-dotenv.config();
 
+dotenv.config();
 const app = express();
-app.use(cors());  // Abilita CORS per tutte le origini
+app.use(cors());
+app.use(express.json());
+app.use(express.static('public'));
+
 const upload = multer({ storage: multer.memoryStorage() });
 const PORT = process.env.PORT || 3000;
 
-const redisConfig = {
-    redis: {
-        port: process.env.REDIS_URL ? new URL(process.env.REDIS_URL).port : 6379,
-        host: process.env.REDIS_URL ? new URL(process.env.REDIS_URL).hostname : 'localhost',
-        password: process.env.REDIS_URL ? new URL(process.env.REDIS_URL).password : undefined,
-        tls: process.env.REDIS_URL ? { rejectUnauthorized: false } : undefined
-    }
-};
-const editQueue = new Queue('image-editing', redisConfig);
+const redis = new Redis({
+    port: process.env.REDIS_URL ? new URL(process.env.REDIS_URL).port : 6379,
+    host: process.env.REDIS_URL ? new URL(process.env.REDIS_URL).hostname : 'localhost',
+    password: process.env.REDIS_URL ? new URL(process.env.REDIS_URL).password : undefined,
+    tls: process.env.REDIS_URL ? { rejectUnauthorized: false } : undefined,
+    maxRetriesPerRequest: null,
+    retryStrategy: (times) => Math.min(times * 50, 2000)
+});
 
-app.use(express.json());
-app.use(express.static('public'));
+const editQueue = new Queue('image-editing', { redis });
 
 app.post('/edit-image', upload.single('image'), async (req, res) => {
     if (!req.file || !req.body.prompt) {
@@ -41,11 +43,46 @@ app.post('/edit-image', upload.single('image'), async (req, res) => {
     }
 });
 
+editQueue.process(async (job) => {
+    try {
+        const response = await axios.post('https://api.openai.com/v1/images/generations', {
+            prompt: job.data.prompt,
+            n: 1,
+            size: "1024x1024"
+        }, {
+            headers: {
+                'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`,
+                'Content-Type': 'application/json'
+            }
+        });
+
+        if (response.data && response.data.choices && response.data.choices.length > 0) {
+            const imageUrl = response.data.choices[0].data.image_url;
+            return imageUrl;  // This will be available on job.finished()
+        } else {
+            throw new Error('API did not return the expected data');
+        }
+    } catch (error) {
+        throw new Error(`Failed to process the image: ${error.message}`);
+    }
+});
+
+app.get('/job-status/:jobId', async (req, res) => {
+    const job = await editQueue.getJob(req.params.jobId);
+    if (!job) {
+        return res.status(404).send('Job not found');
+    }
+
+    const state = await job.getState();
+    const progress = job._progress;
+    const result = await job.finished();
+    res.json({ id: job.id, state, progress, result });
+});
+
 app.listen(PORT, () => {
     console.log(`Server running on http://localhost:${PORT}`);
 });
 
-// Fallback per altre richieste non gestite
 app.use((req, res) => {
     res.status(404).json({ error: 'Endpoint not found' });
 });
