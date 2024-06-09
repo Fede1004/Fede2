@@ -1,58 +1,78 @@
-document.addEventListener('DOMContentLoaded', function() {
-    const submitButton = document.getElementById('submit');
-    const imageInput = document.getElementById('imageInput');
-    const promptInput = document.getElementById('aiPrompt');
-    const resultImage = document.getElementById('resultImage');
-    const progressBar = document.getElementById('progressBar');
-    const errorDisplay = document.getElementById('errorDisplay');
+const express = require('express');
+const multer = require('multer');
+const axios = require('axios');
+const dotenv = require('dotenv');
+const Queue = require('bull');
+dotenv.config();
 
-    submitButton.addEventListener('click', function(event) {
-        event.preventDefault();
-        if (!imageInput.files.length) {
-            displayError('Please select an image to upload.');
-            return;
+const app = express();
+const upload = multer({ storage: multer.memoryStorage() });
+const PORT = process.env.PORT || 3000;
+
+const redisConfig = {
+    redis: {
+        port: process.env.REDIS_URL ? new URL(process.env.REDIS_URL).port : 6379,
+        host: process.env.REDIS_URL ? new URL(process.env.REDIS_URL).hostname : 'localhost',
+        password: process.env.REDIS_URL ? new URL(process.env.REDIS_URL).password : undefined,
+        tls: process.env.REDIS_URL ? { rejectUnauthorized: false } : undefined
+    }
+};
+const editQueue = new Queue('image-editing', redisConfig);
+
+app.use(express.json());
+app.use(express.static('public'));
+
+app.post('/edit-image', upload.single('image'), async (req, res) => {
+    if (!req.file || !req.body.prompt) {
+        return res.status(400).json({ error: 'Both an image and a prompt description are required.' });
+    }
+
+    try {
+        const job = await editQueue.add({
+            image: req.file.buffer,
+            prompt: req.body.prompt
+        });
+
+        res.json({ jobId: job.id, message: "Your request is being processed, please wait." });
+    } catch (error) {
+        res.status(500).json({ error: "Failed to process the request" });
+    }
+});
+
+editQueue.process(async (job) => {
+    try {
+        const response = await axios.post('https://api.openai.com/v1/images/generations', {
+            prompt: job.data.prompt,
+            n: 1,
+            size: "1024x1024"
+        }, {
+            headers: {
+                'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`,
+                'Content-Type': 'application/json'
+            }
+        });
+
+        if (response.data && response.data.choices && response.data.choices.length > 0) {
+            const imageUrl = response.data.choices[0].data.image_url;
+            return { imageUrl: imageUrl };
+        } else {
+            throw new Error('API did not return the expected data');
         }
-
-        const formData = new FormData();
-        formData.append('image', imageInput.files[0]);
-        formData.append('prompt', promptInput.value);
-
-        fetch('/edit-image', {
-            method: 'POST',
-            body: formData
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.jobId) {
-                checkJobStatus(data.jobId);
-            } else {
-                throw new Error('Failed to submit image for processing.');
-            }
-        })
-        .catch(error => {
-            displayError(`An error occurred: ${error.message}`);
-        });
-    });
-
-    function checkJobStatus(jobId) {
-        fetch(`/job-status/${jobId}`)
-        .then(response => response.json())
-        .then(data => {
-            if (data.status === 'completed') {
-                resultImage.innerHTML = `<img src="${data.result.imageUrl}" alt="Edited Image"/>`;
-                progressBar.style.width = '100%';
-            } else if (data.status === 'failed') {
-                throw new Error('Failed to process the image.');
-            } else {
-                setTimeout(() => checkJobStatus(jobId), 3000); // Ripeti il polling ogni 3 secondi
-            }
-        })
-        .catch(error => {
-            displayError(`An error occurred: ${error.message}`);
-        });
+    } catch (error) {
+        throw new Error(`Failed to process the image: ${error.message}`);
     }
+});
 
-    function displayError(message) {
-        errorDisplay.textContent = message;
-    }
+app.listen(PORT, () => {
+    console.log(`Server running on http://localhost:${PORT}`);
+});
+
+app.use((req, res) => {
+    res.status(404).json({ error: 'Not Found' });
+});
+
+process.on('SIGINT', async () => {
+    await editQueue.close();
+    console.log('Queue shut down');
+    process.exit(0);
 });
