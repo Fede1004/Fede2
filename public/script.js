@@ -8,15 +8,14 @@ document.addEventListener('DOMContentLoaded', function() {
 
     submitButton.addEventListener('click', function(event) {
         event.preventDefault();
-        progressBar.style.width = '0%';  // Reset progress bar
-        errorDisplay.textContent = '';  // Clear previous errors
+        progressBar.style.width = '0%';  
+        errorDisplay.textContent = '';  
 
         if (!imageInput.files.length) {
             displayError('Please select an image to upload.');
             return;
         }
 
-        displayMessage("Uploading image...");
         const formData = new FormData();
         formData.append('image', imageInput.files[0]);
         formData.append('prompt', promptInput.value);
@@ -33,7 +32,6 @@ document.addEventListener('DOMContentLoaded', function() {
         })
         .then(data => {
             if (data.jobId) {
-                displayMessage("Image uploaded. Processing...");
                 checkJobStatus(data.jobId);
             } else {
                 throw new Error('Failed to submit image for processing.');
@@ -48,10 +46,10 @@ document.addEventListener('DOMContentLoaded', function() {
         fetch(`/job-status/${jobId}`)
         .then(response => response.json())
         .then(data => {
-            if (data.status === 'completed') {
+            if (data.state === 'completed') {
                 progressBar.style.width = '100%';
-                resultImage.innerHTML = `<img src="${data.result.imageUrl}" alt="Edited Image"/>`;
-            } else if (data.status === 'failed') {
+                resultImage.innerHTML = `<img src="${data.result}" alt="Edited Image"/>`;
+            } else if (data.state === 'failed') {
                 throw new Error('Failed to process the image.');
             } else {
                 progressBar.style.width = `${parseInt(progressBar.style.width) + 10}%`; // Incremental progress
@@ -66,12 +64,5 @@ document.addEventListener('DOMContentLoaded', function() {
     function displayError(message) {
         errorDisplay.textContent = message;
         progressBar.style.width = '0%';
-    }
-
-    function displayMessage(message) {
-        const progressMessage = document.getElementById('progressMessage');
-        if (progressMessage) {
-            progressMessage.textContent = message;
-        }
     }
 });
