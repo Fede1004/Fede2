@@ -8,7 +8,9 @@ document.addEventListener('DOMContentLoaded', function() {
 
     submitButton.addEventListener('click', function(event) {
         event.preventDefault();
-        progressBar.style.width = '0%'; // Reset progress bar on new submission
+        progressBar.style.width = '0%';  // Reset progress bar
+        errorDisplay.textContent = '';  // Clear previous errors
+
         if (!imageInput.files.length) {
             displayError('Please select an image to upload.');
             return;
@@ -24,7 +26,9 @@ document.addEventListener('DOMContentLoaded', function() {
             body: formData
         })
         .then(response => {
-            if (!response.ok) throw new Error('Network response was not ok.');
+            if (!response.ok) {
+                throw new Error(`HTTP error, status = ${response.status}`);
+            }
             return response.json();
         })
         .then(data => {
@@ -46,7 +50,6 @@ document.addEventListener('DOMContentLoaded', function() {
         .then(data => {
             if (data.status === 'completed') {
                 progressBar.style.width = '100%';
-                displayMessage("Processing complete.");
                 resultImage.innerHTML = `<img src="${data.result.imageUrl}" alt="Edited Image"/>`;
             } else if (data.status === 'failed') {
                 throw new Error('Failed to process the image.');
@@ -63,7 +66,6 @@ document.addEventListener('DOMContentLoaded', function() {
     function displayError(message) {
         errorDisplay.textContent = message;
         progressBar.style.width = '0%';
-        displayMessage(""); // Clear progress message
     }
 
     function displayMessage(message) {
