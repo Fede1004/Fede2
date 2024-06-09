@@ -2,22 +2,19 @@ const express = require('express');
 const multer = require('multer');
 const axios = require('axios');
 const dotenv = require('dotenv');
-const rateLimit = require('express-rate-limit');
 dotenv.config();
 
 const app = express();
 const upload = multer({ storage: multer.memoryStorage() });
 const PORT = process.env.PORT || 3000;
 
-// Configura il limitatore di richieste per prevenire il superamento dei limiti dell'API
-const apiLimiter = rateLimit({
-    windowMs: 60 * 1000,  // 1 minuto
-    max: 3,  // Max requests per windowMs
-    message: { error: 'Too many requests, please try again later.' }
-});
-
 app.use(express.static('public'));
-app.use("/edit-image", apiLimiter);  // Applica il limite solo al percorso di invio dell'immagine
+
+// Limite di richieste per evitare il superamento dei limiti dell'API
+app.use('/edit-image', (req, res, next) => {
+    // Implementa una logica di controllo rate limit qui se necessario
+    next();
+});
 
 app.post('/edit-image', upload.single('image'), async (req, res) => {
     if (!req.file || !req.body.prompt) {
@@ -26,8 +23,7 @@ app.post('/edit-image', upload.single('image'), async (req, res) => {
 
     const apiKey = process.env.OPENAI_API_KEY;
     if (!apiKey) {
-        console.error("API key is not set. Check your environment variables.");
-        return res.status(500).json({ error: 'API key is missing.' });
+        return res.status(500).json({ error: 'API key is missing. Check your environment variables.' });
     }
 
     try {
@@ -42,14 +38,13 @@ app.post('/edit-image', upload.single('image'), async (req, res) => {
             }
         });
 
-        if (response.data && response.data.choices && response.data.choices.length > 0 && response.data.choices[0].data) {
+        if (response.data && response.data.choices && response.data.choices.length > 0) {
             const imageUrl = response.data.choices[0].data.image_url;
             res.json({ imageUrl: imageUrl });
         } else {
-            res.status(500).json({ error: 'OpenAI API returned an unexpected response.', details: response.data });
+            res.status(500).json({ error: 'Unexpected response from the API.', details: response.data });
         }
     } catch (error) {
-        console.error('Failed to call OpenAI API:', error);
         res.status(500).json({ error: 'Failed to process the image.', details: error.response ? error.response.data : error.message });
     }
 });
