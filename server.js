@@ -9,34 +9,36 @@ const app = express();
 const upload = multer({ storage: multer.memoryStorage() });
 const PORT = process.env.PORT || 3000;
 
-// Configura la coda di Bull utilizzando l'URL di Redis fornito da Heroku
 const redisConfig = {
     redis: {
         port: process.env.REDIS_URL ? new URL(process.env.REDIS_URL).port : 6379,
         host: process.env.REDIS_URL ? new URL(process.env.REDIS_URL).hostname : 'localhost',
         password: process.env.REDIS_URL ? new URL(process.env.REDIS_URL).password : undefined,
-        tls: process.env.REDIS_URL ? { rejectUnauthorized: false } : undefined // Utilizza TLS se connetti a Redis su Heroku
+        tls: process.env.REDIS_URL ? { rejectUnauthorized: false } : undefined
     }
 };
 const editQueue = new Queue('image-editing', redisConfig);
 
-app.use(express.json());  // Middleware per parsare JSON
-app.use(express.static('public'));  // Serve file statici dalla cartella public
+app.use(express.json());
+app.use(express.static('public'));
 
 app.post('/edit-image', upload.single('image'), async (req, res) => {
     if (!req.file || !req.body.prompt) {
         return res.status(400).json({ error: 'Both an image and a prompt description are required.' });
     }
 
-    const job = await editQueue.add({
-        image: req.file.buffer,
-        prompt: req.body.prompt
-    });
+    try {
+        const job = await editQueue.add({
+            image: req.file.buffer,
+            prompt: req.body.prompt
+        });
 
-    res.json({ jobId: job.id, message: "Your request is being processed, please wait." });
+        res.json({ jobId: job.id, message: "Your request is being processed, please wait." });
+    } catch (error) {
+        res.status(500).json({ error: "Failed to process the request" });
+    }
 });
 
-// Processore della coda che gestisce l'elaborazione delle richieste
 editQueue.process(async (job) => {
     try {
         const response = await axios.post('https://api.openai.com/v1/images/generations', {
@@ -65,7 +67,10 @@ app.listen(PORT, () => {
     console.log(`Server running on http://localhost:${PORT}`);
 });
 
-// Gestione della chiusura dell'applicazione
+app.use((req, res) => {
+    res.status(404).json({ error: 'Not Found' });
+});
+
 process.on('SIGINT', async () => {
     await editQueue.close();
     console.log('Queue shut down');
