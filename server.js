@@ -3,9 +3,11 @@ const multer = require('multer');
 const axios = require('axios');
 const dotenv = require('dotenv');
 const Queue = require('bull');
+const cors = require('cors');
 dotenv.config();
 
 const app = express();
+app.use(cors());  // Abilita CORS per tutte le origini
 const upload = multer({ storage: multer.memoryStorage() });
 const PORT = process.env.PORT || 3000;
 
@@ -32,34 +34,10 @@ app.post('/edit-image', upload.single('image'), async (req, res) => {
             image: req.file.buffer,
             prompt: req.body.prompt
         });
-
         res.json({ jobId: job.id, message: "Your request is being processed, please wait." });
     } catch (error) {
-        res.status(500).json({ error: "Failed to process the request" });
-    }
-});
-
-editQueue.process(async (job) => {
-    try {
-        const response = await axios.post('https://api.openai.com/v1/images/generations', {
-            prompt: job.data.prompt,
-            n: 1,
-            size: "1024x1024"
-        }, {
-            headers: {
-                'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`,
-                'Content-Type': 'application/json'
-            }
-        });
-
-        if (response.data && response.data.choices && response.data.choices.length > 0) {
-            const imageUrl = response.data.choices[0].data.image_url;
-            return { imageUrl: imageUrl };
-        } else {
-            throw new Error('API did not return the expected data');
-        }
-    } catch (error) {
-        throw new Error(`Failed to process the image: ${error.message}`);
+        console.error(error);
+        res.status(500).json({ error: "Internal server error" });
     }
 });
 
@@ -67,12 +45,7 @@ app.listen(PORT, () => {
     console.log(`Server running on http://localhost:${PORT}`);
 });
 
+// Fallback per altre richieste non gestite
 app.use((req, res) => {
-    res.status(404).json({ error: 'Not Found' });
-});
-
-process.on('SIGINT', async () => {
-    await editQueue.close();
-    console.log('Queue shut down');
-    process.exit(0);
+    res.status(404).json({ error: 'Endpoint not found' });
 });
