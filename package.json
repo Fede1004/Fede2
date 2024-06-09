@@ -1,7 +1,7 @@
 {
   "name": "ai-image-editor",
   "version": "1.0.0",
-  "description": "A web application to edit images using AI with user prompts",
+  "description": "A web application to edit images using AI based on user prompts",
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
@@ -11,17 +11,20 @@
     "node": "20.x"
   },
   "dependencies": {
-    "bull": "^4.2.1"  // Assicurati di usare l'ultima versione stabile
+    "express": "^4.18.1",
+    "bull": "^4.2.1",
+    "dotenv": "^16.0.1",
+    "axios": "^0.27.2",
+    "multer": "^1.4.4"
   },
   "repository": {
     "type": "git",
-    "url": "https://your-repository-url-here.git"
+    "url": "https://github.com/yourusername/ai-image-editor.git"
   },
-  "keywords": ["ai", "image-editing", "node", "express", "heroku"],
   "author": "Your Name",
   "license": "ISC",
   "bugs": {
-    "url": "https://your-repository-url-here/issues"
+    "url": "https://github.com/yourusername/ai-image-editor/issues"
   },
-  "homepage": "https://your-repository-url-here#readme"
+  "homepage": "https://github.com/yourusername/ai-image-editor#readme"
 }
