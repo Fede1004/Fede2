@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Apartment Image Editor</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <h1>Edit Your Apartment Image</h1>
+        <input type="file" id="imageInput" accept="image/*">
+        <textarea id="aiPrompt" placeholder="Describe your edit request..."></textarea>
+        <button onclick="submitImage()">Submit</button>
+        <div id="resultImage"></div>
+    </div>
+    <script src="script.js"></script>
+</body>
+</html>
