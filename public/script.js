@@ -4,59 +4,63 @@ document.addEventListener('DOMContentLoaded', function() {
     const promptInput = document.getElementById('aiPrompt');
     const resultImage = document.getElementById('resultImage');
     const progressBar = document.getElementById('progressBar');
+    const errorDisplay = document.getElementById('errorDisplay');
 
     submitButton.addEventListener('click', function() {
-        const file = imageInput.files[0];
-        if (!file) {
-            alert('Please select an image to upload.');
+        if (!imageInput.files.length) {
+            displayError('Please select an image to upload.');
             return;
         }
 
         const formData = new FormData();
-        formData.append('image', file);
+        formData.append('image', imageInput.files[0]);
         formData.append('prompt', promptInput.value);
 
+        progressBar.style.width = '0%';
+        errorDisplay.textContent = '';
         resultImage.innerHTML = '';
-        progressBar.style.width = '0%'; // Reset progress bar
 
         fetch('/edit-image', {
             method: 'POST',
             body: formData
         })
-        .then(response => {
-            if (!response.ok) {
-                throw new Error('Network response was not ok');
-            }
-            return response.json();
-        })
-        .then(data => {
-            if (data.imageUrl) {
-                updateProgressBar(100);
-                resultImage.innerHTML = `<img src="${data.imageUrl}" alt="Edited Image"/>`;
+        .then(response => response.json().then(data => ({ status: response.status, body: data })))
+        .then(obj => {
+            if (obj.status === 200) {
+                updateImage(obj.body);
             } else {
-                progressBar.style.backgroundColor = 'red';
-                console.error('Server returned without an image URL.');
+                throw new Error(obj.body);
             }
         })
         .catch(error => {
-            resultImage.innerHTML = 'An error occurred while fetching the edited image.';
-            console.error('Error fetching the edited image:', error);
-            progressBar.style.backgroundColor = 'red';
+            displayError(`An error occurred: ${error.message}`);
         });
 
-        // Simulate progress
+        simulateProgress();
+    });
+
+    function updateImage(data) {
+        if (data.imageUrl) {
+            resultImage.innerHTML = `<img src="${data.imageUrl}" alt="Edited Image"/>`;
+            progressBar.style.width = '100%';
+        } else {
+            throw new Error('No image URL returned from the server.');
+        }
+    }
+
+    function displayError(message) {
+        errorDisplay.textContent = message;
+    }
+
+    function simulateProgress() {
         let progress = 0;
         const interval = setInterval(() => {
             if (progress >= 100) {
                 clearInterval(interval);
             } else {
-                progress += 10; // Incremental increase
-                updateProgressBar(progress);
+                progress += 10;
+                progressBar.style.width = `${progress}%`;
             }
-        }, 200); // Updates every 200 milliseconds
-    });
-
-    function updateProgressBar(percent) {
-        progressBar.style.width = percent + '%';
+        }, 100);
     }
 });
