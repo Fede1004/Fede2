@@ -25,36 +25,24 @@ document.addEventListener('DOMContentLoaded', function() {
             method: 'POST',
             body: formData
         })
-        .then(response => response.json().then(data => ({
-            status: response.status,
-            body: data
-        })))
-        .then(obj => {
-            if (obj.status === 200) {
-                resultImage.innerHTML = `<img src="${obj.body.imageUrl}" alt="Edited Image"/>`;
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Rate limit exceeded, please try again later.');
+            }
+            return response.json();
+        })
+        .then(data => {
+            if (data.imageUrl) {
+                resultImage.innerHTML = `<img src="${data.imageUrl}" alt="Edited Image"/>`;
                 progressBar.style.width = '100%';
             } else {
-                throw new Error(obj.body.error || 'No specific error message provided.');
+                throw new Error('Failed to process the image.');
             }
         })
         .catch(error => {
             displayError(`An error occurred: ${error.message}`);
         });
-
-        simulateProgress();
     });
-
-    function simulateProgress() {
-        let progress = 0;
-        const interval = setInterval(() => {
-            if (progress >= 100) {
-                clearInterval(interval);
-            } else {
-                progress += 10;
-                progressBar.style.width = `${progress}%`;
-            }
-        }, 100);
-    }
 
     function displayError(message) {
         errorDisplay.textContent = message;
