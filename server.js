@@ -15,16 +15,29 @@ app.use(express.static('public'));
 const upload = multer({ storage: multer.memoryStorage() });
 const PORT = process.env.PORT || 3000;
 
-const redis = new Redis({
-    port: process.env.REDIS_URL ? new URL(process.env.REDIS_URL).port : 6379,
-    host: process.env.REDIS_URL ? new URL(process.env.REDIS_URL).hostname : 'localhost',
-    password: process.env.REDIS_URL ? new URL(process.env.REDIS_URL).password : undefined,
-    tls: process.env.REDIS_URL ? { rejectUnauthorized: false } : undefined,
-    maxRetriesPerRequest: null,
-    retryStrategy: (times) => Math.min(times * 50, 2000)
+if (!process.env.REDISCLOUD_URL) {
+  console.error('REDIS URL not set. Check your configuration.');
+  process.exit(1);
+}
+
+const redis = new Redis(process.env.REDISCLOUD_URL, {
+  tls: {
+    rejectUnauthorized: false
+  }
 });
 
-const editQueue = new Queue('image-editing', { redis });
+redis.on('error', (error) => {
+  console.error('Redis Error', error);
+});
+
+const editQueue = new Queue('image-editing', {
+  redis: {
+    port: new URL(process.env.REDISCLOUD_URL).port,
+    host: new URL(process.env.REDISCLOUD_URL).hostname,
+    password: new URL(process.env.REDISCLOUD_URL).password,
+    tls: { rejectUnauthorized: false }
+  }
+});
 
 app.post('/edit-image', upload.single('image'), async (req, res) => {
     if (!req.file || !req.body.prompt) {
