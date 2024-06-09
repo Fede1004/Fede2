@@ -11,14 +11,14 @@ const PORT = process.env.PORT || 3000;
 app.use(express.static('public'));
 
 app.post('/edit-image', upload.single('image'), async (req, res) => {
+    if (!req.file || !req.body.prompt) {
+        return res.status(400).send('Both an image and a prompt description are required.');
+    }
+
     const apiKey = process.env.OPENAI_API_KEY;
     if (!apiKey) {
         console.error("API key is not set. Check your environment variables.");
-        return res.status(500).send('Server configuration error: API key is missing.');
-    }
-
-    if (!req.file || !req.body.prompt) {
-        return res.status(400).send('Both an image and a prompt description are required.');
+        return res.status(500).send('API key is missing.');
     }
 
     try {
@@ -37,11 +37,11 @@ app.post('/edit-image', upload.single('image'), async (req, res) => {
             const imageUrl = response.data.choices[0].data.image_url;
             res.json({ imageUrl: imageUrl });
         } else {
-            res.status(500).send('OpenAI API returned an unexpected response.');
+            res.status(500).send('Unexpected response from the API.');
         }
     } catch (error) {
-        console.error('Failed to call OpenAI API:', error.response ? error.response.data : error.message);
-        res.status(500).send('Failed to edit image due to an API error.');
+        console.error('Error calling OpenAI API:', error);
+        res.status(500).send('Failed to process the image.');
     }
 });
 
