@@ -15,28 +15,25 @@ app.use(express.static('public'));
 const upload = multer({ storage: multer.memoryStorage() });
 const PORT = process.env.PORT || 3000;
 
-if (!process.env.REDISCLOUD_URL) {
-  console.error('REDIS URL not set. Check your configuration.');
-  process.exit(1);
-}
-
-const redisOptions = {
+// Configurazione avanzata di Redis per gestire correttamente TLS/SSL
+const redis = new Redis(process.env.REDISCLOUD_URL, {
   tls: {
-    rejectUnauthorized: false
+    rejectUnauthorized: false, // Non raccomandato per produzione senza ulteriori considerazioni di sicurezza
+    minVersion: 'TLSv1.2' // Assicurati che sia compatibile con il tuo provider Redis
   }
-};
-const redis = new Redis(process.env.REDISCLOUD_URL, redisOptions);
-
-redis.on('error', (error) => {
-  console.error('Redis Error', error);
 });
 
+redis.on('connect', () => console.log('Connected to Redis successfully!'));
+redis.on('error', (error) => console.error('Redis Error', error));
+
 const editQueue = new Queue('image-editing', {
-  redis: {
-    port: new URL(process.env.REDISCLOUD_URL).port,
-    host: new URL(process.env.REDISCLOUD_URL).hostname,
-    password: new URL(process.env.REDISCLOUD_URL).password,
-    tls: { rejectUnauthorized: false }
+  createClient: function (type) {
+    return new Redis(process.env.REDISCLOUD_URL, {
+      tls: {
+        rejectUnauthorized: false,
+        minVersion: 'TLSv1.2'
+      }
+    });
   }
 });
 
