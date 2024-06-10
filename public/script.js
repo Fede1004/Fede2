@@ -46,9 +46,9 @@ document.addEventListener('DOMContentLoaded', function() {
         fetch(`/job-status/${jobId}`)
         .then(response => response.json())
         .then(data => {
-            if (data.state === 'completed') {
-                progressBar.style.width = '100%';
+            if (data.state === 'completed' && data.result) {
                 resultImage.innerHTML = `<img src="${data.result}" alt="Edited Image"/>`;
+                progressBar.style.width = '100%';
             } else if (data.state === 'failed') {
                 throw new Error('Failed to process the image.');
             } else {
