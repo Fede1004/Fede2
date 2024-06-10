@@ -15,10 +15,20 @@ app.use(express.static('public'));
 const upload = multer({ storage: multer.memoryStorage() });
 const PORT = process.env.PORT || 3000;
 
-const redis = new Redis(process.env.REDISCLOUD_URL, {
+if (!process.env.REDISCLOUD_URL) {
+  console.error('REDIS URL not set. Check your configuration.');
+  process.exit(1);
+}
+
+const redisOptions = {
   tls: {
     rejectUnauthorized: false
   }
+};
+const redis = new Redis(process.env.REDISCLOUD_URL, redisOptions);
+
+redis.on('error', (error) => {
+  console.error('Redis Error', error);
 });
 
 const editQueue = new Queue('image-editing', {
@@ -38,11 +48,6 @@ app.post('/edit-image', upload.single('image'), async (req, res) => {
     const job = await editQueue.add({
         image: req.file.buffer,
         prompt: req.body.prompt
-    }, {
-      removeOnComplete: true,
-      removeOnFail: true,
-      attempts: 2,
-      backoff: 30000
     });
 
     res.json({ jobId: job.id, message: "Your request is being processed, please wait." });
