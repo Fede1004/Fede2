@@ -24,7 +24,7 @@ app.post('/edit-image', upload.single('image'), async (req, res) => {
         prompt: req.body.prompt,
         n: 1,
         size: "1024x1024",
-        model: "dall-e-3" // Assicurati di utilizzare un modello compatibile con il tuo piano
+        model: "dall-e-2" // Assicurati di utilizzare un modello compatibile con il tuo piano
     };
 
     try {
