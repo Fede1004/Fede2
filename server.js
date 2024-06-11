@@ -12,19 +12,17 @@ const PORT = process.env.PORT || 3000;
 app.use(express.json());
 app.use(express.static('public'));
 
-// Endpoint per l'elaborazione delle immagini
 app.post('/edit-image', upload.single('image'), async (req, res) => {
     if (!req.file || !req.body.prompt) {
         return res.status(400).json({ error: 'Both an image and a prompt are required.' });
     }
 
-    // Costruisci il payload per l'API di OpenAI
     const imageData = req.file.buffer.toString('base64');
     const payload = {
         prompt: req.body.prompt,
         n: 1,
         size: "1024x1024",
-        model: "dall-e-2" // Assicurati di utilizzare un modello compatibile con il tuo piano
+        model: "dall-e-2"
     };
 
     try {
@@ -35,7 +33,6 @@ app.post('/edit-image', upload.single('image'), async (req, res) => {
             }
         });
 
-        // Controlla se la risposta contiene l'immagine
         if (response.data && response.data.data && response.data.data.length > 0) {
             const imageUrl = response.data.data[0].url;
             res.json({ imageUrl });
