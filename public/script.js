@@ -23,7 +23,12 @@ document.addEventListener('DOMContentLoaded', function() {
             method: 'POST',
             body: formData
         })
-        .then(response => response.json())
+        .then(response => {
+            if (!response.ok) {
+                throw new Error(`HTTP error, status = ${response.status}`);
+            }
+            return response.json();
+        })
         .then(data => {
             loader.style.display = 'none'; // Nascondi l'indicatore di caricamento
             if (data.imageUrl) {
