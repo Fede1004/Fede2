@@ -4,6 +4,8 @@ const axios = require('axios');
 const dotenv = require('dotenv');
 const sharp = require('sharp');
 const FormData = require('form-data');
+const fs = require('fs');
+const path = require('path');
 
 dotenv.config();
 
