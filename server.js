@@ -32,7 +32,7 @@ app.post('/edit-image', upload.single('image'), async (req, res) => {
             contentType: 'image/png',
         });
         formData.append('prompt', req.body.prompt);
-        formData.append('n', 1);
+        formData.append('n', '1');
         formData.append('size', '1024x1024');
         formData.append('response_format', 'url');
 
