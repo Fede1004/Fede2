@@ -34,6 +34,7 @@ app.post('/edit-image', upload.single('image'), async (req, res) => {
         formData.append('prompt', req.body.prompt);
         formData.append('n', 1);
         formData.append('size', '1024x1024');
+        formData.append('response_format', 'url');
 
         const response = await axios.post('https://api.openai.com/v1/images/edits', formData, {
             headers: {
