@@ -4,6 +4,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const promptInput = document.getElementById('aiPrompt');
     const resultImage = document.getElementById('resultImage');
     const errorDisplay = document.getElementById('errorDisplay');
+    const loader = document.getElementById('loader');
 
     submitButton.addEventListener('click', function(event) {
         event.preventDefault();
@@ -16,12 +17,15 @@ document.addEventListener('DOMContentLoaded', function() {
         formData.append('image', imageInput.files[0]);
         formData.append('prompt', promptInput.value);
 
+        loader.style.display = 'block'; // Mostra l'indicatore di caricamento
+
         fetch('/edit-image', {
             method: 'POST',
             body: formData
         })
         .then(response => response.json())
         .then(data => {
+            loader.style.display = 'none'; // Nascondi l'indicatore di caricamento
             if (data.imageUrl) {
                 resultImage.innerHTML = `<img src="${data.imageUrl}" alt="Edited Image" style="width:100%;">`; // Mostra l'immagine a schermo intero
             } else {
@@ -29,6 +33,7 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         })
         .catch(error => {
+            loader.style.display = 'none'; // Nascondi l'indicatore di caricamento
             displayError(`An error occurred: ${error.message}`);
         });
     });
