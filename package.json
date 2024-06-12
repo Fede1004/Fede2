@@ -1,7 +1,7 @@
 {
-  "name": "ai-apartment-image-editor",
+  "name": "ai-image-editor",
   "version": "1.0.0",
-  "description": "A web application to edit apartment images using AI based on user prompts",
+  "description": "A web application to edit images using AI based on user prompts",
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
@@ -16,16 +16,17 @@
     "axios": "^0.27.2",
     "dotenv": "^16.0.1",
     "cors": "^2.8.5",
-    "sharp": "^0.30.0"
+    "sharp": "^0.29.3",
+    "form-data": "^4.0.0"
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/yourusername/ai-apartment-image-editor.git"
+    "url": "https://github.com/yourusername/ai-image-editor.git"
   },
   "author": "Your Name",
   "license": "ISC",
   "bugs": {
-    "url": "https://github.com/yourusername/ai-apartment-image-editor/issues"
+    "url": "https://github.com/yourusername/ai-image-editor/issues"
   },
-  "homepage": "https://github.com/yourusername/ai-apartment-image-editor#readme"
+  "homepage": "https://github.com/yourusername/ai-image-editor#readme"
 }
