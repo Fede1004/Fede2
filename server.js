@@ -20,11 +20,15 @@ app.post('/edit-image', upload.single('image'), async (req, res) => {
     }
 
     try {
+        console.log('Received file and prompt:', req.file.originalname, req.body.prompt);
+        
         const processedImage = await sharp(req.file.buffer)
             .resize(1024, 1024)
             .ensureAlpha()
             .png()
             .toBuffer();
+        
+        console.log('Image processed successfully');
 
         const formData = new FormData();
         formData.append('image', processedImage, {
@@ -36,12 +40,16 @@ app.post('/edit-image', upload.single('image'), async (req, res) => {
         formData.append('size', '1024x1024');
         formData.append('response_format', 'url');
 
+        console.log('Sending request to OpenAI API');
+
         const response = await axios.post('https://api.openai.com/v1/images/edits', formData, {
             headers: {
                 ...formData.getHeaders(),
                 'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`,
             },
         });
+
+        console.log('Received response from OpenAI API:', response.data);
 
         if (response.data && response.data.data && response.data.data.length > 0) {
             const imageUrl = response.data.data[0].url;
