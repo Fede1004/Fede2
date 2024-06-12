@@ -16,33 +16,45 @@ const PORT = process.env.PORT || 3000;
 app.use(express.json());
 app.use(express.static('public'));
 
-app.post('/edit-image', upload.single('image'), async (req, res) => {
-    if (!req.file || !req.body.prompt) {
+app.post('/edit-image', upload.fields([{ name: 'image' }, { name: 'mask' }]), async (req, res) => {
+    if (!req.files.image || !req.body.prompt) {
         return res.status(400).json({ error: 'Both an image and a prompt are required.' });
     }
 
     try {
-        console.log('Received file and prompt:', req.file.originalname, req.body.prompt);
-        
-        const processedImage = await sharp(req.file.buffer)
+        const imageBuffer = req.files.image[0].buffer;
+        const maskBuffer = req.files.mask ? req.files.mask[0].buffer : null;
+
+        const processedImage = await sharp(imageBuffer)
             .resize(1024, 1024)
             .ensureAlpha()
             .png()
             .toBuffer();
-        
-        console.log('Image processed successfully');
+
+        let processedMask = null;
+        if (maskBuffer) {
+            processedMask = await sharp(maskBuffer)
+                .resize(1024, 1024)
+                .ensureAlpha()
+                .png()
+                .toBuffer();
+        }
 
         const formData = new FormData();
         formData.append('image', processedImage, {
             filename: 'image.png',
             contentType: 'image/png',
         });
+        if (processedMask) {
+            formData.append('mask', processedMask, {
+                filename: 'mask.png',
+                contentType: 'image/png',
+            });
+        }
         formData.append('prompt', req.body.prompt);
         formData.append('n', '1');
         formData.append('size', '1024x1024');
         formData.append('response_format', 'url');
-
-        console.log('Sending request to OpenAI API');
 
         const response = await axios.post('https://api.openai.com/v1/images/edits', formData, {
             headers: {
@@ -50,8 +62,6 @@ app.post('/edit-image', upload.single('image'), async (req, res) => {
                 'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`,
             },
         });
-
-        console.log('Received response from OpenAI API:', response.data);
 
         if (response.data && response.data.data && response.data.data.length > 0) {
             const imageUrl = response.data.data[0].url;
