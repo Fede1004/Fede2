@@ -10,7 +10,7 @@ body, html {
     padding: 10px;
     text-align: center;
 }
-textarea, input[type="file"] {
+textarea, input[type="file"], canvas {
     width: 100%;
     margin-top: 10px;
 }
@@ -20,8 +20,9 @@ button {
     font-size: 16px;
     cursor: pointer;
 }
-#loader {
-    margin-top: 20px;
-    font-size: 18px;
-    color: #555;
+.toolbar {
+    margin: 10px 0;
+}
+.toolbar button {
+    margin-right: 5px;
 }
