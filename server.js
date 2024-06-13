@@ -4,8 +4,6 @@ const axios = require('axios');
 const dotenv = require('dotenv');
 const sharp = require('sharp');
 const FormData = require('form-data');
-const fs = require('fs');
-const path = require('path');
 
 dotenv.config();
 
@@ -17,14 +15,15 @@ app.use(express.json());
 app.use(express.static('public'));
 
 app.post('/edit-image', upload.fields([{ name: 'image' }, { name: 'mask' }]), async (req, res) => {
-    if (!req.files.image || !req.body.prompt) {
+    if (!req.files['image'] || !req.body.prompt) {
         return res.status(400).json({ error: 'Both an image and a prompt are required.' });
     }
 
     try {
-        const imageBuffer = req.files.image[0].buffer;
-        const maskBuffer = req.files.mask ? req.files.mask[0].buffer : null;
+        const imageBuffer = req.files['image'][0].buffer;
+        const maskBuffer = req.files['mask'] ? req.files['mask'][0].buffer : null;
 
+        // Convert the image to PNG and ensure it is 1024x1024 with alpha channel
         const processedImage = await sharp(imageBuffer)
             .resize(1024, 1024)
             .ensureAlpha()
@@ -35,7 +34,6 @@ app.post('/edit-image', upload.fields([{ name: 'image' }, { name: 'mask' }]), as
         if (maskBuffer) {
             processedMask = await sharp(maskBuffer)
                 .resize(1024, 1024)
-                .ensureAlpha()
                 .png()
                 .toBuffer();
         }
@@ -52,8 +50,8 @@ app.post('/edit-image', upload.fields([{ name: 'image' }, { name: 'mask' }]), as
             });
         }
         formData.append('prompt', req.body.prompt);
-        formData.append('n', '1');
         formData.append('size', '1024x1024');
+        formData.append('n', '1');
         formData.append('response_format', 'url');
 
         const response = await axios.post('https://api.openai.com/v1/images/edits', formData, {
