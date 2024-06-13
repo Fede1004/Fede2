@@ -3,21 +3,19 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Image Editor with AI</title>
+    <title>AI Image Editor</title>
     <link rel="stylesheet" href="styles.css">
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/fabric.js/4.6.0/fabric.min.js"></script>
 </head>
 <body>
     <div class="container">
         <h1>AI-powered Image Editor</h1>
         <input type="file" id="imageInput" accept="image/*">
+        <input type="file" id="maskInput" accept="image/png">
         <textarea id="aiPrompt" placeholder="Describe your edit request..."></textarea>
         <button id="submit">Submit</button>
-        <canvas id="canvas"></canvas>
         <div id="progressBar" style="width: 0%; height: 20px; background-color: #4CAF50;"></div>
         <div id="resultImage"></div>
         <div id="errorDisplay"></div>
-        <div id="loader" style="display:none;">Loading...</div>
     </div>
     <script src="script.js"></script>
 </body>
