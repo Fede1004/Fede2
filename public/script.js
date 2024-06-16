@@ -1,7 +1,6 @@
 document.addEventListener('DOMContentLoaded', function() {
     const submitButton = document.getElementById('submit');
     const imageInput = document.getElementById('imageInput');
-    const maskInput = document.getElementById('maskInput');
     const promptInput = document.getElementById('aiPrompt');
     const resultImage = document.getElementById('resultImage');
     const errorDisplay = document.getElementById('errorDisplay');
@@ -91,14 +90,10 @@ document.addEventListener('DOMContentLoaded', function() {
         formData.append('image', imageInput.files[0]);
         formData.append('prompt', promptInput.value);
 
-        if (maskInput.files.length) {
-            formData.append('mask', maskInput.files[0]);
-        } else {
-            imageCanvas.toBlob(function(blob) {
-                formData.append('mask', blob, 'mask.png');
-                sendRequest(formData);
-            });
-        }
+        imageCanvas.toBlob(function(blob) {
+            formData.append('mask', blob, 'mask.png');
+            sendRequest(formData);
+        });
     });
 
     function sendRequest(formData) {
