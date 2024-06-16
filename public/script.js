@@ -37,12 +37,13 @@ document.addEventListener('DOMContentLoaded', function() {
     imageCanvas.addEventListener('mousedown', function(e) {
         drawing = true;
         ctx.beginPath();
-        ctx.moveTo(e.offsetX, e.offsetY);
+        ctx.moveTo(getMousePos(e).x, getMousePos(e).y);
     });
 
     imageCanvas.addEventListener('mousemove', function(e) {
         if (drawing) {
-            ctx.lineTo(e.offsetX, e.offsetY);
+            const pos = getMousePos(e);
+            ctx.lineTo(pos.x, pos.y);
             ctx.strokeStyle = erasing ? 'white' : 'black';
             ctx.lineWidth = currentBrushSize;
             ctx.stroke();
@@ -52,6 +53,14 @@ document.addEventListener('DOMContentLoaded', function() {
     imageCanvas.addEventListener('mouseup', function() {
         drawing = false;
     });
+
+    function getMousePos(event) {
+        const rect = imageCanvas.getBoundingClientRect();
+        return {
+            x: event.clientX - rect.left,
+            y: event.clientY - rect.top
+        };
+    }
 
     document.getElementById('brushSizeSmall').addEventListener('click', function() {
         currentBrushSize = brushSizes.small;
