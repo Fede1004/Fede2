@@ -2,6 +2,7 @@ const express = require('express');
 const multer = require('multer');
 const axios = require('axios');
 const dotenv = require('dotenv');
+const sharp = require('sharp');
 
 dotenv.config();
 
@@ -19,17 +20,34 @@ app.post('/edit-image', upload.fields([{ name: 'image' }, { name: 'mask' }]), as
 
     try {
         const imageBuffer = req.files['image'][0].buffer;
-        const maskBuffer = req.files['mask'][0].buffer;
-        const imageBase64 = imageBuffer.toString('base64');
-        const maskBase64 = maskBuffer.toString('base64');
+        const maskBuffer = req.files['mask'] ? req.files['mask'][0].buffer : null;
 
-        const response = await axios.post('https://api.openai.com/v1/images/edits', {
-            image: imageBase64,
-            mask: maskBase64,
+        // Transform image to RGBA, PNG, and 1024x1024
+        const processedImage = await sharp(imageBuffer)
+            .resize(1024, 1024, { fit: 'contain', background: { r: 0, g: 0, b: 0, alpha: 0 } })
+            .png()
+            .toBuffer();
+
+        let processedMask = null;
+        if (maskBuffer) {
+            processedMask = await sharp(maskBuffer)
+                .resize(1024, 1024, { fit: 'contain', background: { r: 0, g: 0, b: 0, alpha: 0 } })
+                .png()
+                .toBuffer();
+        }
+
+        const payload = {
+            image: processedImage.toString('base64'),
             prompt: req.body.prompt,
             n: 1,
-            size: "1024x1024"
-        }, {
+            size: "1024x1024",
+        };
+
+        if (processedMask) {
+            payload.mask = processedMask.toString('base64');
+        }
+
+        const response = await axios.post('https://api.openai.com/v1/images/edits', payload, {
             headers: {
                 'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`,
                 'Content-Type': 'application/json'
