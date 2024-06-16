@@ -3,25 +3,20 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI Image Editor</title>
+    <title>Image Editor with AI</title>
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
     <div class="container">
         <h1>AI-powered Image Editor</h1>
         <input type="file" id="imageInput" accept="image/*">
-        <canvas id="imageCanvas" style="border: 1px solid black;"></canvas>
-        <div class="toolbar">
-            <button id="brushSizeSmall">Small Brush</button>
-            <button id="brushSizeMedium">Medium Brush</button>
-            <button id="brushSizeLarge">Large Brush</button>
-            <button id="erase">Eraser</button>
-        </div>
-        <label for="maskInput">Upload a mask (optional):</label>
-        <input type="file" id="maskInput" accept="image/png">
         <textarea id="aiPrompt" placeholder="Describe your edit request..."></textarea>
+        <button id="brushSizeSmall">Small Brush</button>
+        <button id="brushSizeMedium">Medium Brush</button>
+        <button id="brushSizeLarge">Large Brush</button>
+        <button id="erase">Erase</button>
         <button id="submit">Submit</button>
-        <div id="progressBar" style="width: 0%; height: 20px; background-color: #4CAF50;"></div>
+        <canvas id="imageCanvas" style="border: 1px solid #000;"></canvas>
         <div id="resultImage"></div>
         <div id="errorDisplay"></div>
     </div>
