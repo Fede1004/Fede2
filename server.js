@@ -2,8 +2,6 @@ const express = require('express');
 const multer = require('multer');
 const axios = require('axios');
 const dotenv = require('dotenv');
-const sharp = require('sharp');
-const FormData = require('form-data');
 
 dotenv.config();
 
@@ -20,45 +18,19 @@ app.post('/edit-image', upload.fields([{ name: 'image' }, { name: 'mask' }]), as
     }
 
     try {
-        const imageBuffer = req.files['image'][0].buffer;
-        const maskBuffer = req.files['mask'] ? req.files['mask'][0].buffer : null;
-
-        // Convert the image to PNG and ensure it is 1024x1024 with alpha channel
-        const processedImage = await sharp(imageBuffer)
-            .resize(1024, 1024)
-            .ensureAlpha()
-            .png()
-            .toBuffer();
-
-        let processedMask = null;
-        if (maskBuffer) {
-            processedMask = await sharp(maskBuffer)
-                .resize(1024, 1024)
-                .png()
-                .toBuffer();
-        }
-
-        const formData = new FormData();
-        formData.append('image', processedImage, {
-            filename: 'image.png',
-            contentType: 'image/png',
-        });
-        if (processedMask) {
-            formData.append('mask', processedMask, {
-                filename: 'mask.png',
-                contentType: 'image/png',
-            });
-        }
-        formData.append('prompt', req.body.prompt);
-        formData.append('size', '1024x1024');
-        formData.append('n', '1');
-        formData.append('response_format', 'url');
-
-        const response = await axios.post('https://api.openai.com/v1/images/edits', formData, {
+        const imageData = req.files['image'][0].buffer.toString('base64');
+        const maskData = req.files['mask'][0].buffer.toString('base64');
+        const response = await axios.post('https://api.openai.com/v1/images/edits', {
+            image: imageData,
+            mask: maskData,
+            prompt: req.body.prompt,
+            n: 1,
+            size: "1024x1024"
+        }, {
             headers: {
-                ...formData.getHeaders(),
                 'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`,
-            },
+                'Content-Type': 'application/json'
+            }
         });
 
         if (response.data && response.data.data && response.data.data.length > 0) {
@@ -71,7 +43,7 @@ app.post('/edit-image', upload.fields([{ name: 'image' }, { name: 'mask' }]), as
         console.error('Failed to process the image:', error.response ? error.response.data : error.message);
         res.status(500).json({
             error: 'Failed to submit image for processing.',
-            details: error.response ? error.response.data : 'No additional information available',
+            details: error.response ? error.response.data : 'No additional information available'
         });
     }
 });
