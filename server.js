@@ -18,11 +18,14 @@ app.post('/edit-image', upload.fields([{ name: 'image' }, { name: 'mask' }]), as
     }
 
     try {
-        const imageData = req.files['image'][0].buffer.toString('base64');
-        const maskData = req.files['mask'][0].buffer.toString('base64');
+        const imageBuffer = req.files['image'][0].buffer;
+        const maskBuffer = req.files['mask'][0].buffer;
+        const imageBase64 = imageBuffer.toString('base64');
+        const maskBase64 = maskBuffer.toString('base64');
+
         const response = await axios.post('https://api.openai.com/v1/images/edits', {
-            image: imageData,
-            mask: maskData,
+            image: imageBase64,
+            mask: maskBase64,
             prompt: req.body.prompt,
             n: 1,
             size: "1024x1024"
