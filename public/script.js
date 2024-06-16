@@ -93,7 +93,7 @@ document.addEventListener('DOMContentLoaded', function() {
         imageCanvas.toBlob(function(blob) {
             formData.append('mask', blob, 'mask.png');
             sendRequest(formData);
-        });
+        }, 'image/png');
     });
 
     function sendRequest(formData) {
