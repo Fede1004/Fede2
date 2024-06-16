@@ -56,11 +56,11 @@ document.addEventListener('DOMContentLoaded', function() {
 
     function getMousePos(event) {
         const rect = imageCanvas.getBoundingClientRect();
-        console.log('Mouse Position:', event.clientX, event.clientY);
-        console.log('Canvas Position:', rect.left, rect.top);
+        const scaleX = imageCanvas.width / rect.width;
+        const scaleY = imageCanvas.height / rect.height;
         return {
-            x: event.clientX - rect.left,
-            y: event.clientY - rect.top
+            x: (event.clientX - rect.left) * scaleX,
+            y: (event.clientY - rect.top) * scaleY
         };
     }
 
